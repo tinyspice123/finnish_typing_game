@@ -13,6 +13,8 @@ Näppärä is a dependency-free Finnish typing practice game hosted on GitHub Pa
 - The timer must start on the user's first keystroke, not on page load.
 - Do not add analytics, accounts, or remote storage without explicit approval.
 - Test changes on both desktop and narrow mobile layouts.
+- Keep reusable scoring, normalization, and adaptive-learning logic in `game-core.js` so it remains unit-testable without a browser.
+- Run `npm test` after changing learning logic.
 
 ## Content
 

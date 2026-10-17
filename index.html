@@ -30,13 +30,34 @@
           <p class="intro-copy">Type everyday Finnish sentences, hear how they sound, and build a rhythm that sticks.</p>
         </section>
 
+        <section class="practice-controls" aria-label="Practice settings">
+          <label>Practice mode
+            <select id="modeSelect">
+              <option value="adaptive">Adaptive mix</option>
+              <option value="review">Needs practice</option>
+              <option value="listening">Listening</option>
+              <option value="patterns">Response patterns</option>
+            </select>
+          </label>
+          <label>Topic
+            <select id="topicSelect"><option value="all">All YKI topics</option></select>
+          </label>
+          <div class="goal-control">
+            <span>Daily goal</span>
+            <button type="button" id="goalButton"><strong id="goalValue">10</strong> sentences</button>
+          </div>
+        </section>
+
         <section class="game-card" aria-label="Typing game">
           <div class="game-toolbar">
-            <div class="round-count"><span id="roundNumber">01</span> <span class="divider">/</span> <span id="roundTotal">12</span></div>
+            <div class="round-count"><span id="roundNumber">01</span> <span class="divider">/</span> <span id="roundTotal">1000</span><span class="topic-badge" id="topicBadge">Arki</span></div>
             <div class="toolbar-actions">
               <button class="text-button" id="translationButton" type="button" aria-expanded="false">
                 <span class="eye-icon" aria-hidden="true">◉</span>
                 <span id="translationButtonLabel">Show translation</span>
+              </button>
+              <button class="practice-button" id="practiceButton" type="button" aria-pressed="false">
+                <span aria-hidden="true">☆</span><span id="practiceButtonLabel">Needs practice</span>
               </button>
               <button class="icon-button" id="speakButton" type="button" aria-label="Listen to the Finnish sentence" title="Listen">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5l4.5 4V5Zm4.2 3.2a5.4 5.4 0 0 1 0 7.6M17.8 5.6a9 9 0 0 1 0 12.8"/></svg>
@@ -48,9 +69,23 @@
           </div>
 
           <div class="sentence-area">
-            <p class="sentence" id="sentence" aria-label="Sentence to type"></p>
+            <p class="sentence" id="sentence" lang="fi" aria-label="Sentence to type"></p>
+            <div class="listening-prompt" id="listeningPrompt" hidden>
+              <span class="sound-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+              <strong>Listen, then type what you hear</strong>
+              <small>You can replay the sentence as often as you need.</small>
+            </div>
             <div class="translation-wrap" id="translationWrap" hidden>
               <span>EN</span><p id="translation"></p>
+            </div>
+            <div class="word-card" id="wordCard" hidden>
+              <button id="closeWordCard" aria-label="Close vocabulary card">×</button>
+              <span class="word-kicker">VOCABULARY</span>
+              <strong id="wordForm"></strong>
+              <p><span>Dictionary form</span> <b id="wordBase"></b></p>
+              <p id="wordMeaning"></p>
+              <a class="dictionary-link" id="dictionaryLink" href="#" target="_blank" rel="noopener">Open full dictionary entry ↗</a>
+              <button class="save-word" id="saveWordButton" type="button">Save word</button>
             </div>
           </div>
 
@@ -80,13 +115,32 @@
           <div class="session-summary">
             <div><strong id="completedCount">0</strong><span>completed</span></div>
             <div><strong id="bestWpm">0</strong><span>best WPM</span></div>
+            <div><strong id="masteredCount">0</strong><span>mastered</span></div>
             <button id="resetButton" class="reset-button" type="button">Reset session</button>
           </div>
+        </section>
+
+        <section class="learning-grid" aria-label="Learning progress">
+          <article class="learning-card goal-card">
+            <div class="card-heading"><div><p class="eyebrow">DAILY GOAL</p><h3>Keep the rhythm</h3></div><strong id="goalFraction">0 / 10</strong></div>
+            <div class="goal-track"><span id="goalProgress"></span></div>
+            <div class="week-chart" id="weekChart" role="list" aria-label="Completed sentences during the last seven days"></div>
+          </article>
+          <article class="learning-card">
+            <div class="card-heading"><div><p class="eyebrow">FOCUS LIST</p><h3>Words to revisit</h3></div><span id="savedWordCount">0 saved</span></div>
+            <div class="chip-list" id="savedWords"><p class="empty-message">Click a word in a sentence to save it.</p></div>
+          </article>
+          <article class="learning-card">
+            <div class="card-heading"><div><p class="eyebrow">COMMON MISTAKES</p><h3>Your tricky words</h3></div><span>local data</span></div>
+            <div class="mistake-list" id="mistakeList"><p class="empty-message">Mistyped words will appear here.</p></div>
+          </article>
         </section>
       </main>
 
       <footer><span>Built for curious language learners.</span><span>Finnish · Suomi</span></footer>
     </div>
+    <script src="game-core.js"></script>
+    <script src="sentence-bank.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
