@@ -69,6 +69,11 @@ h1 em { font-family: Georgia, serif; font-weight: 400; color: var(--coral); }
 .task-meta span { padding: 5px 8px; border-radius: 12px; background: #efebe3; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
 .task-prompt { margin: 0 0 20px; font-size: clamp(18px, 2.4vw, 25px); line-height: 1.45; }
 .task-details { margin: -8px 0 20px; padding-left: 20px; color: var(--muted); line-height: 1.7; }
+.learning-help { margin: -4px 0 18px; }
+.help-panel { max-width: 720px; margin-top: 10px; padding: 14px 16px; border: 1px solid #c7d5f2; border-radius: 12px; background: #f4f7ff; color: var(--ink); line-height: 1.55; }
+.help-panel strong { color: var(--blue); font-size: 12px; }
+.help-panel p { margin: 5px 0; font-size: 13px; }
+.help-panel small { color: var(--muted); }
 .yki-textarea { min-height: 180px; padding: 18px; border: 1px solid var(--line); border-radius: 13px; background: white; resize: vertical; }
 .yki-textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(23,87,215,.11); }
 .task-footer, .rating-row, .recorder-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }

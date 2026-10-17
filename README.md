@@ -9,6 +9,7 @@ A lightweight, single-player Finnish typing game inspired by TypeRacer. Practice
 - Punctuation and capitalization are ignored when checking completion
 - Finnish text-to-speech through the browser's Web Speech API
 - English translations hidden behind a toggle
+- Optional plain-English help for YKI prompts, hidden until requested
 - Responsive, keyboard-friendly interface
 - Best WPM saved locally in the browser
 - 1,000 B1–B2 sentences across the official YKI topic areas and practical interactions

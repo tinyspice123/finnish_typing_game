@@ -30,6 +30,26 @@
     { id: "l-appointment", skill: "listening", topic: "Terveys", source: "Hei, täällä on Keskustan hammashoitola. Huominen aikasi on jouduttu siirtämään hammaslääkärin sairastumisen vuoksi. Uusi aika on ensi viikon tiistaina kello 10. Jos aika ei sovi, soita meille ennen perjantaita.", question: "Mitä asiakkaan pitää tehdä, jos uusi aika ei sovi?", options: ["Tulla huomenna paikalle.", "Vastata sähköpostilla tiistaina.", "Soittaa ennen perjantaita."], answer: 2, explanation: "Viestissä pyydetään soittamaan ennen perjantaita, jos uusi aika ei sovi." }
   ];
 
+  const taskHelp = {
+    "w-landlord": "Your kitchen tap is leaking. Write to your landlord. Say what is wrong, when it began, and ask for a repair while suggesting a suitable time.",
+    "w-cancel": "You cannot attend an agreed meeting. Apologize, briefly explain why, and suggest two new times.",
+    "w-complaint": "You ordered a coat online but received the wrong size. Write a complaint mentioning what happened, order number 5482, and the solution you want.",
+    "w-opinion": "Give your opinion on limiting private cars in the city centre. Include two reasons and acknowledge the opposite point of view.",
+    "p-request": "Choose the phrase that makes this a polite formal request: asking someone to send written confirmation.",
+    "p-opinion": "Choose the phrase that clearly introduces your own opinion.",
+    "p-contrast": "Choose the linking word that introduces the other side of an argument.",
+    "p-reason": "Choose the conjunction that gives the reason for contacting someone.",
+    "p-solution": "Choose the verb used to propose a solution or plan.",
+    "p-concession": "Choose the conjunction meaning 'although' or 'even though'.",
+    "s-health": "Call a health centre. Describe your symptoms, say how long they have lasted, and ask for a doctor's appointment.",
+    "s-late": "Leave your supervisor a message saying you will be about 30 minutes late. Explain why and say when you will arrive.",
+    "s-opinion": "Say whether public transport should be cheaper. Give two reasons and mention another point of view.",
+    "r-library": "The question asks: How can a registered customer use the library at 18:00? Look for what remains available after staff leave.",
+    "r-rent": "The question asks: Why is the rent increasing? Find the sentence that states the reason for the increase.",
+    "l-train": "The question asks: What must the passenger notice? Listen for changes to the journey details.",
+    "l-appointment": "The question asks: What should the customer do if the new appointment time is unsuitable? Listen for the requested action and deadline."
+  };
+
   const ui = {
     workspace: document.querySelector("#ykiWorkspace"), typing: document.querySelector("#typingPractice"), content: document.querySelector("#ykiContent"),
     kicker: document.querySelector("#ykiKicker"), title: document.querySelector("#ykiTitle"), timer: document.querySelector("#ykiTimer"), status: document.querySelector("#ykiStatus"),
@@ -84,10 +104,29 @@
   }
   function meta(topic, label) { return `<div class="task-meta"><span>${topic}</span><span>${label}</span></div>`; }
   function safe(text) { const node = document.createElement("div"); node.textContent = text; return node.innerHTML; }
+  function helpMarkup(task, inMock = false) {
+    if (inMock || !taskHelp[task.id]) return "";
+    const panelId = `help-${task.id}`;
+    return `<div class="learning-help"><button class="secondary-action help-button" type="button" aria-expanded="false" aria-controls="${panelId}">Help me understand</button><div class="help-panel" id="${panelId}" hidden><strong>In plain English</strong><p>${safe(taskHelp[task.id])}</p><small>Try answering in Finnish. Using help is part of learning.</small></div></div>`;
+  }
+  function attachHelp(task) {
+    const button = document.querySelector(".help-button");
+    const panel = document.querySelector(".help-panel");
+    if (!button || !panel) return;
+    button.onclick = () => {
+      const show = panel.hidden;
+      panel.hidden = !show;
+      button.setAttribute("aria-expanded", String(show));
+      button.textContent = show ? "Hide help" : "Help me understand";
+      if (show) { state.help[task.id] = true; save(); }
+    };
+  }
 
   function showWriting(task = sample(writingTasks), inMock = false) {
     setHeader(inMock ? "MOCK TEST · WRITING" : "ACTIVE RECALL", "Write from a real situation", `${task.minutes}:00`);
     ui.content.innerHTML = `${inMock ? mockBar() : ""}${meta(task.topic, task.register)}<p class="task-prompt" lang="fi">${task.prompt}</p><ul class="task-details">${task.points.map((p) => `<li>${p}</li>`).join("")}</ul><textarea class="yki-textarea" id="ykiAnswer" lang="fi" placeholder="Kirjoita vastauksesi suomeksi…" aria-label="Your Finnish response"></textarea><div class="task-footer"><button class="primary-action" id="checkWriting">Check my response</button><button class="secondary-action" id="showModel">Show model</button><span class="word-count" id="wordCount">0 words</span></div><div id="taskFeedback"></div>`;
+    document.querySelector("#ykiAnswer").insertAdjacentHTML("beforebegin", helpMarkup(task, inMock));
+    attachHelp(task);
     const answer = document.querySelector("#ykiAnswer");
     answer.addEventListener("input", () => { document.querySelector("#wordCount").textContent = `${normalize(answer.value).split(" ").filter(Boolean).length} words`; });
     document.querySelector("#showModel").onclick = () => { state.help[task.id] = true; save(); showWritingFeedback(task, answer.value, true, inMock); };
@@ -107,6 +146,8 @@
   function showPhrases(task = sample(phraseTasks)) {
     setHeader("USEFUL STRUCTURES", "Build an answer that flows");
     ui.content.innerHTML = `${meta("B1–B2", "Phrase training")}<p class="task-prompt">${task.before}<span class="phrase-blank">${task.gap}</span></p><div class="answer-grid">${task.options.map((option) => `<button class="answer-option" data-option="${safe(option)}">${option}</button>`).join("")}</div><div id="taskFeedback"></div>`;
+    document.querySelector(".answer-grid").insertAdjacentHTML("beforebegin", helpMarkup(task));
+    attachHelp(task);
     document.querySelectorAll("[data-option]").forEach((button) => button.onclick = () => {
       const correct = button.dataset.option === task.answer;
       document.querySelectorAll("[data-option]").forEach((item) => { item.disabled = true; if (item.dataset.option === task.answer) item.classList.add("correct"); });
@@ -120,6 +161,8 @@
   function showSpeaking(task = sample(speakingTasks), inMock = false) {
     setHeader(inMock ? "MOCK TEST · SPEAKING" : "SPEAKING", "Say it in your own words", `Prep ${task.prep}s`);
     ui.content.innerHTML = `${inMock ? mockBar() : ""}${meta(task.topic, `${task.seconds} second response`)}<p class="task-prompt" lang="fi">${task.prompt}</p><div class="recorder-actions"><button class="primary-action record-button" id="recordButton">Start recording</button><button class="secondary-action" id="skipRecording">Use self-assessment only</button></div><div id="recordingResult"></div>`;
+    document.querySelector(".recorder-actions").insertAdjacentHTML("beforebegin", helpMarkup(task, inMock));
+    attachHelp(task);
     startTimer(task.prep, () => { ui.timer.textContent = "Ready to speak"; });
     document.querySelector("#recordButton").onclick = () => toggleRecording(task, inMock);
     document.querySelector("#skipRecording").onclick = () => speakingChecklist(task, inMock);
@@ -151,6 +194,8 @@
     const listening = task.skill === "listening";
     setHeader(inMock ? `MOCK TEST · ${task.skill.toUpperCase()}` : "UNDERSTAND FINNISH", listening ? "Listen for meaning" : "Read for meaning");
     ui.content.innerHTML = `${inMock ? mockBar() : ""}${meta(task.topic, listening ? "Listening" : "Reading")}${listening ? `<div class="audio-prompt"><button class="primary-action" id="playSource">▶ Play Finnish audio</button><span>Listen before opening the choices.</span></div>` : `<div class="source-card" lang="fi">${task.source}</div>`}<p class="task-prompt" style="margin-top:22px" lang="fi">${task.question}</p><div class="answer-grid">${task.options.map((option, index) => `<button class="answer-option" data-answer="${index}">${option}</button>`).join("")}</div><div id="taskFeedback"></div>`;
+    document.querySelector(".answer-grid").insertAdjacentHTML("beforebegin", helpMarkup(task, inMock));
+    attachHelp(task);
     if (listening) document.querySelector("#playSource").onclick = () => speak(task.source);
     document.querySelectorAll("[data-answer]").forEach((button) => button.onclick = () => {
       const chosen = Number(button.dataset.answer); const correct = chosen === task.answer;
