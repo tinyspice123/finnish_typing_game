@@ -192,7 +192,6 @@
     document.querySelectorAll("[data-yki-view]").forEach((button) => button.classList.toggle("is-active", button.dataset.ykiView === view));
     ui.typing.hidden = view !== "typing"; ui.workspace.hidden = view === "typing";
     if (view === "writing") showWriting(); else if (view === "phrases") showPhrases(); else if (view === "speaking") showSpeaking(); else if (view === "comprehension") showComprehension(); else if (view === "mock") showMockStart();
-    (view === "typing" ? ui.typing : ui.workspace).scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   document.querySelectorAll("[data-yki-view]").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.ykiView)));
