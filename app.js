@@ -127,10 +127,10 @@ const $ = (selector) => document.querySelector(selector);
 const STORAGE_KEY = "nappara-learning-v2";
 const glossary = {
   Suomessa: ["Suomi", "in Finland"], suomea: ["suomi", "Finnish (partitive)"], yhteisöön: ["yhteisö", "into a community"],
-  vuokra-asunnossa: ["vuokra-asunto", "in a rental apartment"], huoltoyhtiöön: ["huoltoyhtiö", "maintenance company"], taloyhtiön: ["taloyhtiö", "housing company"],
+  "vuokra-asunnossa": ["vuokra-asunto", "in a rental apartment"], huoltoyhtiöön: ["huoltoyhtiö", "maintenance company"], taloyhtiön: ["taloyhtiö", "housing company"],
   viallinen: ["viallinen", "defective"], kuitti: ["kuitti", "receipt"], korvausta: ["korvaus", "reimbursement"], takuu: ["takuu", "warranty"],
   saavutettavissa: ["saavutettava", "accessible"], harrastus: ["harrastus", "hobby"], juhannusta: ["juhannus", "Midsummer"],
-  myöhästyi: ["myöhästyä", "was delayed"], löytötavarapalveluun: ["löytötavarapalvelu", "lost property service"], ruuhka-aikaan: ["ruuhka-aika", "during rush hour"],
+  myöhästyi: ["myöhästyä", "was delayed"], löytötavarapalveluun: ["löytötavarapalvelu", "lost property service"], "ruuhka-aikaan": ["ruuhka-aika", "during rush hour"],
   oireet: ["oire", "symptoms"], päivystykseen: ["päivystys", "emergency care"], hyvinvointiin: ["hyvinvointi", "to wellbeing"],
   työhaastattelussa: ["työhaastattelu", "at a job interview"], määräaikainen: ["määräaikainen", "fixed-term"], esihenkilölle: ["esihenkilö", "to a supervisor"],
   ympäristöystävällinen: ["ympäristöystävällinen", "environmentally friendly"], jokaisenoikeuksiin: ["jokaisenoikeudet", "everyman's rights"], monimuotoisuudelle: ["monimuotoisuus", "for biodiversity"],
@@ -173,7 +173,7 @@ function createOrder() {
   clearInterval(timerId); timerId = null; startedAt = null;
   order = buildWeightedPool(sentences, state.progress, { mode: elements.mode.value, topic: elements.topicSelect.value });
   roundIndex = 0;
-  elements.total.textContent = String(order.length).padStart(2, "0");
+  elements.total.textContent = String(new Set(order).size).padStart(2, "0");
   if (!order.length) {
     elements.feedback.textContent = "No sentences are marked yet. Choose Adaptive mix and mark one with Needs practice.";
     locked = true; elements.input.value = ""; elements.input.disabled = true; elements.speakButton.disabled = true; elements.practiceButton.disabled = true; elements.shuffleButton.disabled = true;
