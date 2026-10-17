@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, dateKey } = require("../game-core.js");
+const { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, scheduleReview, isReviewDue, readinessScore, dateKey } = require("../game-core.js");
 
 test("normalize ignores punctuation, capitalization, and extra whitespace", () => {
   assert.equal(normalize("  Hyvää, PÄIVÄÄ! "), "hyvää päivää");
@@ -60,6 +60,26 @@ test("three successful reviews master a sentence and clear its flag", () => {
   assert.equal(record.mastered, true);
   assert.equal(record.needsPractice, false);
   assert.equal(record.attempts, 3);
+});
+
+test("spaced review grows intervals after successful recall", () => {
+  const now = new Date("2026-01-01T12:00:00Z");
+  const first = scheduleReview({}, 3, now);
+  const second = scheduleReview(first, 3, now);
+  const third = scheduleReview(second, 3, now);
+  assert.deepEqual([first.interval, second.interval, third.interval], [1, 3, 7]);
+  assert.equal(isReviewDue(first, new Date("2026-01-02T12:00:00Z")), true);
+});
+
+test("failed recall resets repetitions and schedules a quick retry", () => {
+  const result = scheduleReview({ repetitions: 4, interval: 12 }, 0, new Date("2026-01-01T12:00:00Z"));
+  assert.equal(result.repetitions, 0);
+  assert.equal(result.interval, 0);
+});
+
+test("readiness uses recent bounded practice results", () => {
+  assert.equal(readinessScore({ writing: [20, 40, 60, 80, 100, 100] }), 76);
+  assert.equal(readinessScore({}), 0);
 });
 
 test("dateKey uses a stable local YYYY-MM-DD format", () => {

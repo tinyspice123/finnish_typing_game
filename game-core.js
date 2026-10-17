@@ -71,9 +71,40 @@
     return next;
   }
 
+  function scheduleReview(record = {}, rating = 2, now = new Date()) {
+    const quality = Math.max(0, Math.min(3, Number(rating) || 0));
+    const previousInterval = Math.max(0, Number(record.interval) || 0);
+    const repetitions = quality < 2 ? 0 : (record.repetitions || 0) + 1;
+    let interval;
+    if (quality < 2) interval = quality === 0 ? 0 : 1;
+    else if (repetitions === 1) interval = 1;
+    else if (repetitions === 2) interval = 3;
+    else interval = Math.max(4, Math.round(previousInterval * (quality === 3 ? 2.4 : 1.7)));
+    const due = new Date(now);
+    due.setDate(due.getDate() + interval);
+    return {
+      ...record,
+      repetitions,
+      interval,
+      lastRating: quality,
+      reviewedAt: now.toISOString(),
+      dueAt: due.toISOString()
+    };
+  }
+
+  function isReviewDue(record, now = new Date()) {
+    return Boolean(record?.dueAt) && new Date(record.dueAt).getTime() <= now.getTime();
+  }
+
+  function readinessScore(skillResults = {}) {
+    const values = Object.values(skillResults).flatMap((items) => Array.isArray(items) ? items.slice(-5) : []);
+    if (!values.length) return 0;
+    return Math.round(values.reduce((sum, value) => sum + Math.max(0, Math.min(100, Number(value) || 0)), 0) / values.length);
+  }
+
   function dateKey(date = new Date()) {
     return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
   }
 
-  return { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, dateKey };
+  return { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, scheduleReview, isReviewDue, readinessScore, dateKey };
 });
