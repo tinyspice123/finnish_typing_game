@@ -22,6 +22,7 @@ A lightweight, single-player Finnish typing game inspired by TypeRacer. Practice
 - Browser-local speaking recording with timed prompts and self-assessment
 - Reading and listening comprehension tasks focused on meaning
 - Four-skill mock checkpoints and a descriptive practice profile after enough evidence
+- Installable web-app metadata with favicon, Apple touch icon, and mobile home-screen icons
 - Automatic deployment to GitHub Pages
 
 ## Run locally

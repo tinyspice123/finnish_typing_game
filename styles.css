@@ -42,7 +42,8 @@ button { color: inherit; }
 }
 
 .brand { color: var(--ink); text-decoration: none; display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 800; letter-spacing: -.03em; }
-.brand-mark { width: 34px; height: 34px; display: grid; place-items: center; color: white; background: var(--blue); border-radius: 50% 50% 45% 55%; font-family: "DM Mono", monospace; box-shadow: 3px 3px 0 var(--coral); }
+.brand-mark { width: 38px; height: 38px; display: block; overflow: hidden; border-radius: 11px; background: var(--blue); }
+.brand-mark img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .header-note { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 7px; }
 

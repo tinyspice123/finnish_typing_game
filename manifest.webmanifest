@@ -1,0 +1,25 @@
+{
+  "name": "Näppärä — Finnish YKI Practice",
+  "short_name": "Näppärä",
+  "description": "Practise Finnish typing, writing, speaking, reading, and listening for YKI.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5efe3",
+  "theme_color": "#1757d7",
+  "icons": [
+    {
+      "src": "assets/icons/nappara-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/nappara-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
