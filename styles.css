@@ -94,6 +94,8 @@ h1 em { font-family: Georgia, serif; font-weight: 400; color: var(--coral); }
 .readiness-card { grid-column: 1 / -1; min-height: 0; }
 .skill-bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 22px; }
 .skill-bar { display: grid; grid-template-columns: 1fr auto; gap: 7px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+.skill-bar strong { color: var(--muted); font-size: 9px; text-align: right; }
+.readiness-card .card-heading > strong { max-width: 180px; text-align: right; }
 .skill-bar i { grid-column: 1 / -1; height: 6px; border-radius: 5px; background: #e2ddd2; overflow: hidden; }
 .skill-bar i span { display: block; height: 100%; background: var(--blue); border-radius: inherit; }
 .readiness-note { margin: 16px 0 0; color: var(--muted); font-size: 10px; }

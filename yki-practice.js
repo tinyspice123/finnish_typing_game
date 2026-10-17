@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = "nappara-yki-v1";
   const skills = ["writing", "speaking", "reading", "listening"];
-  const { scheduleReview, isReviewDue, readinessScore, normalize } = GameCore;
+  const { scheduleReview, isReviewDue, readinessLevel, normalize } = GameCore;
   const writingTasks = [
     { id: "w-landlord", topic: "Asuminen", register: "Formal message", minutes: 8, prompt: "Keittiön hana vuotaa. Kirjoita viesti vuokranantajalle.", points: ["Kerro, mikä ongelma on.", "Kerro, milloin ongelma alkoi.", "Pyydä korjausta ja ehdota sopivaa aikaa."], keys: ["hana", "vuotaa", "alk", "korja", "sopi"], model: "Hei,\n\nKeittiöni hana on vuotanut eilisestä lähtien. Vettä valuu jatkuvasti, vaikka hana on kiinni. Voisitteko järjestää korjauksen mahdollisimman pian? Olen kotona huomenna kello 16 jälkeen.\n\nYstävällisin terveisin,\nAlex" },
     { id: "w-cancel", topic: "Vuorovaikutus", register: "Polite message", minutes: 6, prompt: "Et pääse sovittuun tapaamiseen. Kirjoita viesti henkilölle, jonka kanssa sovit tapaamisen.", points: ["Pahoittele ja kerro, ettet pääse.", "Kerro lyhyesti syy.", "Ehdota kahta uutta aikaa."], keys: ["anteeksi", "valitettavasti", "koska", "sopis", "aika"], model: "Hei! Valitettavasti en pääse huomiseen tapaamiseen, koska lapseni on sairastunut. Olen pahoillani muutoksesta. Sopisiko sinulle torstaina kello 15 tai perjantaina aamupäivällä?" },
@@ -44,8 +44,12 @@
   let mock = null;
 
   function load() {
-    const fallback = { reviews: {}, results: { writing: [], speaking: [], reading: [], listening: [] }, completed: {}, help: {} };
-    try { return { ...fallback, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") }; } catch { return fallback; }
+    const fallback = { schema: 2, reviews: {}, results: { writing: [], speaking: [], reading: [], listening: [] }, completed: {}, help: {} };
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      if (saved.schema !== 2) return { ...fallback, reviews: saved.reviews || {}, completed: saved.completed || {}, help: saved.help || {} };
+      return { ...fallback, ...saved, results: { ...fallback.results, ...(saved.results || {}) } };
+    } catch { return fallback; }
   }
   function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   function sample(items) {
@@ -56,6 +60,11 @@
   }
   function addResult(skill, score, id, rating) {
     state.results[skill] = [...(state.results[skill] || []), Math.round(score)].slice(-20);
+    state.completed[id] = (state.completed[id] || 0) + 1;
+    state.reviews[id] = scheduleReview(state.reviews[id], rating);
+    save(); renderReadiness();
+  }
+  function recordReview(id, rating) {
     state.completed[id] = (state.completed[id] || 0) + 1;
     state.reviews[id] = scheduleReview(state.reviews[id], rating);
     save(); renderReadiness();
@@ -103,7 +112,7 @@
       document.querySelectorAll("[data-option]").forEach((item) => { item.disabled = true; if (item.dataset.option === task.answer) item.classList.add("correct"); });
       if (!correct) button.classList.add("wrong");
       document.querySelector("#taskFeedback").innerHTML = `<div class="feedback-panel"><h3>${correct ? "Hyvä!" : `Answer: ${task.answer}`}</h3><p>${task.note}</p><button class="primary-action" id="nextPhrase">Next phrase</button></div>`;
-      addResult("writing", correct ? 85 : 35, task.id, correct ? 3 : 1);
+      recordReview(task.id, correct ? 3 : 1);
       document.querySelector("#nextPhrase").onclick = () => showPhrases();
     });
   }
@@ -173,19 +182,20 @@
   }
   function showMockResult() {
     setHeader("CHECKPOINT COMPLETE", "Your current practice picture", "Done"); renderReadiness();
-    const scores = skills.map((skill) => [skill, readinessScore({ [skill]: state.results[skill] })]);
-    ui.content.innerHTML = `<div class="feedback-panel"><h3>Readiness estimate</h3><div class="skill-bars">${scores.map(([skill, score]) => skillBar(skill, score)).join("")}</div><p>This estimate is based on recent practice and self-assessment. It is not an official level or pass prediction.</p><button class="primary-action" id="finishMock">Return to practice</button></div>`;
+    const levels = skills.map((skill) => [skill, readinessLevel(state.results[skill])]);
+    ui.content.innerHTML = `<div class="feedback-panel"><h3>Practice profile</h3><div class="skill-bars">${levels.map(([skill, level]) => skillBar(skill, level)).join("")}</div><p>Complete at least three tasks in each skill to build a balanced profile. These labels describe recent practice only, not an official level or pass prediction.</p><button class="primary-action" id="finishMock">Return to practice</button></div>`;
     document.querySelector("#finishMock").onclick = () => switchView("typing"); mock = null;
   }
 
-  function skillBar(skill, score) { return `<div class="skill-bar"><span>${skill}</span><strong>${score}%</strong><i><span style="width:${score}%"></span></i></div>`; }
+  function skillBar(skill, level) { return `<div class="skill-bar"><span>${skill}</span><strong>${level.label}</strong><i><span style="width:${level.assessed ? level.score : 0}%"></span></i></div>`; }
   function renderReadiness() {
-    const scores = Object.fromEntries(skills.map((skill) => [skill, readinessScore({ [skill]: state.results[skill] || [] })]));
-    const attempted = skills.filter((skill) => state.results[skill]?.length);
-    const total = attempted.length ? Math.round(attempted.reduce((sum, skill) => sum + scores[skill], 0) / attempted.length) : 0;
-    ui.total.textContent = `${total}%`; ui.bars.innerHTML = skills.map((skill) => skillBar(skill, scores[skill])).join("");
+    const levels = Object.fromEntries(skills.map((skill) => [skill, readinessLevel(state.results[skill] || [])]));
+    const allAssessed = skills.every((skill) => levels[skill].assessed);
+    const overallScore = allAssessed ? Math.round(skills.reduce((sum, skill) => sum + levels[skill].score, 0) / skills.length) : 0;
+    const overall = allAssessed ? readinessLevel([overallScore, overallScore, overallScore]) : { label: "Not assessed" };
+    ui.total.textContent = overall.label; ui.bars.innerHTML = skills.map((skill) => skillBar(skill, levels[skill])).join("");
     const due = Object.values(state.reviews).filter((record) => isReviewDue(record)).length;
-    ui.note.textContent = attempted.length < 4 ? `Practise all four skills for a balanced estimate. ${due} review item${due === 1 ? " is" : "s are"} due.` : `${due} review item${due === 1 ? " is" : "s are"} due. Recent results carry the most weight.`;
+    ui.note.textContent = allAssessed ? `${due} review item${due === 1 ? " is" : "s are"} due. Labels reflect your five most recent results in each skill.` : `Complete three tasks in each skill to build your practice profile. ${due} review item${due === 1 ? " is" : "s are"} due.`;
   }
   function switchView(view) {
     clearTimer(); window.speechSynthesis?.cancel?.(); currentView = view;

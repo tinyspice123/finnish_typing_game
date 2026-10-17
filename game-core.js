@@ -102,9 +102,17 @@
     return Math.round(values.reduce((sum, value) => sum + Math.max(0, Math.min(100, Number(value) || 0)), 0) / values.length);
   }
 
+  function readinessLevel(results = [], minimumAttempts = 3) {
+    const recent = Array.isArray(results) ? results.slice(-5) : [];
+    if (recent.length < minimumAttempts) return { label: "Not assessed", score: 0, assessed: false };
+    const score = readinessScore({ results: recent });
+    const label = score >= 80 ? "Strong in practice" : score >= 60 ? "Consistent" : "Developing";
+    return { label, score, assessed: true };
+  }
+
   function dateKey(date = new Date()) {
     return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
   }
 
-  return { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, scheduleReview, isReviewDue, readinessScore, dateKey };
+  return { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, scheduleReview, isReviewDue, readinessScore, readinessLevel, dateKey };
 });

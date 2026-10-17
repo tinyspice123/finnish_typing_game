@@ -1,6 +1,6 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, scheduleReview, isReviewDue, readinessScore, dateKey } = require("../game-core.js");
+const { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, scheduleReview, isReviewDue, readinessScore, readinessLevel, dateKey } = require("../game-core.js");
 
 test("normalize ignores punctuation, capitalization, and extra whitespace", () => {
   assert.equal(normalize("  Hyvää, PÄIVÄÄ! "), "hyvää päivää");
@@ -80,6 +80,13 @@ test("failed recall resets repetitions and schedules a quick retry", () => {
 test("readiness uses recent bounded practice results", () => {
   assert.equal(readinessScore({ writing: [20, 40, 60, 80, 100, 100] }), 76);
   assert.equal(readinessScore({}), 0);
+});
+
+test("readiness requires enough relevant evidence and uses descriptive levels", () => {
+  assert.deepEqual(readinessLevel([100, 100]), { label: "Not assessed", score: 0, assessed: false });
+  assert.equal(readinessLevel([40, 50, 60]).label, "Developing");
+  assert.equal(readinessLevel([60, 70, 75]).label, "Consistent");
+  assert.equal(readinessLevel([80, 90, 100]).label, "Strong in practice");
 });
 
 test("dateKey uses a stable local YYYY-MM-DD format", () => {
