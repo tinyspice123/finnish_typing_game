@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5efe3" />
+    <meta name="description" content="A calm Finnish typing practice game with pronunciation and English translations." />
+    <title>Näppärä — Finnish typing practice</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="./" aria-label="Näppärä home">
+          <span class="brand-mark" aria-hidden="true">N</span>
+          <span>Näppärä</span>
+        </a>
+        <div class="header-note"><span class="status-dot"></span> Finnish typing practice</div>
+      </header>
+
+      <main>
+        <section class="intro" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow">OPI KIRJOITTAMALLA · LEARN BY TYPING</p>
+            <h1 id="page-title">Find your Finnish <em>flow.</em></h1>
+          </div>
+          <p class="intro-copy">Type everyday Finnish sentences, hear how they sound, and build a rhythm that sticks.</p>
+        </section>
+
+        <section class="game-card" aria-label="Typing game">
+          <div class="game-toolbar">
+            <div class="round-count"><span id="roundNumber">01</span> <span class="divider">/</span> <span id="roundTotal">12</span></div>
+            <div class="toolbar-actions">
+              <button class="text-button" id="translationButton" type="button" aria-expanded="false">
+                <span class="eye-icon" aria-hidden="true">◉</span>
+                <span id="translationButtonLabel">Show translation</span>
+              </button>
+              <button class="icon-button" id="speakButton" type="button" aria-label="Listen to the Finnish sentence" title="Listen">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5l4.5 4V5Zm4.2 3.2a5.4 5.4 0 0 1 0 7.6M17.8 5.6a9 9 0 0 1 0 12.8"/></svg>
+              </button>
+              <button class="icon-button" id="shuffleButton" type="button" aria-label="Skip to another sentence" title="Another sentence">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c4 0 6.5 10 10.5 10h4M18 14l3 3-3 3M3 17h3.5c1.3 0 2.4-1.1 3.5-2.7M14 9.7C15 8.2 16 7 17 7h4M18 4l3 3-3 3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="sentence-area">
+            <p class="sentence" id="sentence" aria-label="Sentence to type"></p>
+            <div class="translation-wrap" id="translationWrap" hidden>
+              <span>EN</span><p id="translation"></p>
+            </div>
+          </div>
+
+          <label class="input-label" for="typingInput">Your turn</label>
+          <div class="input-wrap" id="inputWrap">
+            <textarea id="typingInput" rows="2" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Start typing here…" aria-describedby="typingHint"></textarea>
+            <div class="progress-line"><span id="progressBar"></span></div>
+          </div>
+          <div class="input-footer">
+            <p id="typingHint"><kbd>Enter</kbd> next sentence</p>
+            <p id="feedback" role="status" aria-live="polite">Timer starts with your first keystroke.</p>
+          </div>
+
+          <div class="stats" aria-label="Current statistics">
+            <div class="stat"><span class="stat-label">Speed</span><strong><span id="wpm">0</span> <small>WPM</small></strong></div>
+            <div class="stat"><span class="stat-label">Accuracy</span><strong><span id="accuracy">100</span><small>%</small></strong></div>
+            <div class="stat"><span class="stat-label">Time</span><strong><span id="time">0:00</span></strong></div>
+            <div class="stat"><span class="stat-label">Streak</span><strong><span id="streak">0</span> <small>sentences</small></strong></div>
+          </div>
+        </section>
+
+        <section class="progress-section" aria-labelledby="progress-title">
+          <div>
+            <p class="eyebrow">TODAY'S PRACTICE</p>
+            <h2 id="progress-title">Small steps, hyvä flow.</h2>
+          </div>
+          <div class="session-summary">
+            <div><strong id="completedCount">0</strong><span>completed</span></div>
+            <div><strong id="bestWpm">0</strong><span>best WPM</span></div>
+            <button id="resetButton" class="reset-button" type="button">Reset session</button>
+          </div>
+        </section>
+      </main>
+
+      <footer><span>Built for curious language learners.</span><span>Finnish · Suomi</span></footer>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
