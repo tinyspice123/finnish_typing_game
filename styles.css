@@ -46,10 +46,10 @@ button { color: inherit; }
 .header-note { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); margin-right: 7px; }
 
-main { padding: 78px 0 40px; }
-.intro { display: grid; grid-template-columns: 1.4fr .6fr; gap: 60px; align-items: end; margin-bottom: 42px; }
+main { padding: 48px 0 40px; }
+.intro { display: grid; grid-template-columns: 1.4fr .6fr; gap: 48px; align-items: end; margin-bottom: 28px; }
 .eyebrow { color: var(--blue); font-size: 11px; letter-spacing: .15em; font-weight: 800; margin: 0 0 14px; }
-h1 { font-size: clamp(42px, 7vw, 78px); line-height: .98; letter-spacing: -.065em; margin: 0; max-width: 760px; }
+h1 { font-size: clamp(40px, 5.7vw, 64px); line-height: 1; letter-spacing: -.06em; margin: 0; max-width: 700px; }
 h1 em { font-family: Georgia, serif; font-weight: 400; color: var(--coral); }
 .intro-copy { color: var(--muted); line-height: 1.7; margin: 0 0 7px; font-size: 15px; max-width: 310px; }
 .learning-path { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 22px; }
@@ -214,8 +214,9 @@ footer { height: 76px; border-top: 1px solid var(--line); display: flex; justify
   .page-shell { width: min(100% - 24px, 1120px); }
   .site-header { height: 70px; }
   .header-note { display: none; }
-  main { padding-top: 46px; }
-  .intro { grid-template-columns: 1fr; gap: 18px; margin-bottom: 28px; }
+  main { padding-top: 28px; }
+  .intro { grid-template-columns: 1fr; gap: 12px; margin-bottom: 22px; }
+  h1 { font-size: clamp(36px, 11vw, 48px); }
   .intro-copy { max-width: 100%; }
   .practice-controls { align-items: stretch; display: grid; grid-template-columns: 1fr 1fr; }
   .goal-control { margin: 0; grid-column: 1 / -1; }
@@ -229,7 +230,9 @@ footer { height: 76px; border-top: 1px solid var(--line); display: flex; justify
   .progress-section { align-items: flex-start; flex-direction: column; gap: 28px; }
   .session-summary { width: 100%; justify-content: space-between; gap: 14px; }
   .learning-grid { grid-template-columns: 1fr; }
-  .learning-path { grid-template-columns: repeat(3, 1fr); }
+  .learning-path { display: flex; gap: 8px; margin-inline: -12px; padding: 0 12px 8px; overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: inline mandatory; scrollbar-width: none; }
+  .learning-path::-webkit-scrollbar { display: none; }
+  .path-card { flex: 0 0 142px; scroll-snap-align: start; }
   .skill-bars { grid-template-columns: 1fr 1fr; }
 }
 
@@ -238,7 +241,6 @@ footer { height: 76px; border-top: 1px solid var(--line); display: flex; justify
   .sentence-area { padding-inline: 5%; }
   .input-wrap, .input-label, .input-footer { width: 90%; }
   .session-summary { flex-wrap: wrap; }
-  .learning-path { grid-template-columns: 1fr 1fr; }
   .yki-topline { flex-direction: column; }
   .word-count { width: 100%; margin: 0; }
 }
