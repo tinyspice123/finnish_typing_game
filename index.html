@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20261017-5" />
+    <link rel="stylesheet" href="styles.css?v=20261018-1" />
   </head>
   <body>
     <div class="page-shell">
@@ -34,15 +34,16 @@
         </section>
 
         <nav class="learning-path" aria-label="YKI practice areas">
-          <button class="path-card is-active" type="button" data-yki-view="typing"><span>01</span><strong>Typing</strong><small>Accuracy warm-up</small></button>
-          <button class="path-card" type="button" data-yki-view="writing"><span>02</span><strong>Writing</strong><small>Active recall</small></button>
-          <button class="path-card" type="button" data-yki-view="phrases"><span>03</span><strong>Phrases</strong><small>Useful structures</small></button>
-          <button class="path-card" type="button" data-yki-view="speaking"><span>04</span><strong>Speaking</strong><small>Record & reflect</small></button>
-          <button class="path-card" type="button" data-yki-view="comprehension"><span>05</span><strong>Understand</strong><small>Read & listen</small></button>
-          <button class="path-card path-card-accent" type="button" data-yki-view="mock"><span>06</span><strong>Mock test</strong><small>Timed practice</small></button>
+          <button class="path-card is-active" type="button" data-yki-view="learn"><span>01</span><strong>Learn</strong><small>Vocabulary first</small></button>
+          <button class="path-card" type="button" data-yki-view="typing"><span>02</span><strong>Typing</strong><small>Accuracy warm-up</small></button>
+          <button class="path-card" type="button" data-yki-view="writing"><span>03</span><strong>Writing</strong><small>Active recall</small></button>
+          <button class="path-card" type="button" data-yki-view="phrases"><span>04</span><strong>Phrases</strong><small>Useful structures</small></button>
+          <button class="path-card" type="button" data-yki-view="speaking"><span>05</span><strong>Speaking</strong><small>Record & reflect</small></button>
+          <button class="path-card" type="button" data-yki-view="comprehension"><span>06</span><strong>Understand</strong><small>Read & listen</small></button>
+          <button class="path-card path-card-accent" type="button" data-yki-view="mock"><span>07</span><strong>Mock test</strong><small>Timed practice</small></button>
         </nav>
 
-        <section class="yki-workspace" id="ykiWorkspace" hidden aria-labelledby="ykiTitle">
+        <section class="yki-workspace" id="ykiWorkspace" aria-labelledby="ykiTitle">
           <div class="yki-topline">
             <div><p class="eyebrow" id="ykiKicker">ACTIVE RECALL</p><h2 id="ykiTitle">Write from a real situation</h2></div>
             <div class="yki-timer" id="ykiTimer" aria-live="polite">Untimed</div>
@@ -51,7 +52,7 @@
           <p class="yki-status" id="ykiStatus" role="status" aria-live="polite"></p>
         </section>
 
-        <section class="typing-practice" id="typingPractice" aria-label="Typing practice">
+        <section class="typing-practice" id="typingPractice" hidden aria-label="Typing practice">
         <div class="practice-controls" aria-label="Practice settings">
           <label>Practice mode
             <select id="modeSelect">
@@ -170,6 +171,6 @@
     <script src="game-core.js?v=20261017-4"></script>
     <script src="sentence-bank.js?v=20261017-2"></script>
     <script src="app.js?v=20261017-2"></script>
-    <script src="yki-practice.js?v=20261017-4"></script>
+    <script src="yki-practice.js?v=20261018-1"></script>
   </body>
 </html>
