@@ -54,7 +54,7 @@ main { padding: 48px 0 40px; }
 h1 { font-size: clamp(40px, 5.7vw, 64px); line-height: 1; letter-spacing: -.06em; margin: 0; max-width: 700px; }
 h1 em { font-family: Georgia, serif; font-weight: 400; color: var(--coral); }
 .intro-copy { color: var(--muted); line-height: 1.7; margin: 0 0 7px; font-size: 15px; max-width: 310px; }
-.learning-path { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 22px; }
+.learning-path { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 22px; }
 .path-card { min-width: 0; padding: 15px 12px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,253,248,.7); cursor: pointer; text-align: left; transition: transform .15s, border-color .15s, background .15s; }
 .path-card:hover, .path-card:focus-visible { transform: translateY(-2px); border-color: var(--blue); outline: 2px solid transparent; }
 .path-card.is-active { color: white; border-color: var(--blue); background: var(--blue); }
@@ -291,4 +291,47 @@ footer { height: 76px; border-top: 1px solid var(--line); display: flex; justify
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+.bridge-units { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-block: 20px; }
+.bridge-units button { text-align: left; white-space: normal; }
+.bridge-units [aria-current="step"] { border-color: var(--blue); background: #edf3ff; }
+.bridge-example { padding: 16px; margin-block: 12px; border: 1px solid var(--line); border-radius: 12px; }
+.bridge-example .model-finnish { margin-top: 0; }
+#bridgeActivity details { margin-block: 14px; }
+#bridgeActivity summary { cursor: pointer; color: var(--blue); }
+.bridge-input { min-height: 48px; width: 100%; }
+#ykiContent:has(#bridgeActivity) .lesson-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#ykiContent button:focus-visible, #bridgeActivity summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+#bridgeActivity { overflow-wrap: anywhere; }
+.bridge-units small { display: block; margin-top: 6px; color: var(--muted); }
+.course-dashboard { padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.course-settings, .calendar-activity { display: flex; flex-wrap: wrap; gap: 16px; margin-block: 16px; }
+.course-settings label, .calendar-activity label { display: grid; gap: 8px; flex: 1 1 180px; min-width: 0; }
+#ykiContent select { max-width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: white; color: var(--ink); font: inherit; }
+#ykiContent label { line-height: 1.6; }
+#ykiContent details { margin-block: 14px; }
+#ykiContent summary { color: var(--blue); cursor: pointer; }
+#ykiContent fieldset { min-width: 0; margin-block: 16px; border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+.source-choice { display: flex; align-items: flex-start; gap: 8px; margin-block: 12px; }
+.source-choice input { margin-top: 7px; flex-shrink: 0; }
+.phrase-cards { display: flex; flex-wrap: wrap; padding: 0; gap: 10px; list-style-position: inside; }
+.phrase-cards li { padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--blue-light); }
+.phrase-cards li span { display: block; margin-block: 8px; }
+.phrase-cards button { min-width: 44px; min-height: 44px; }
+.local-recorder { margin-block: 20px; }
+.recorder-playback { display: grid; gap: 12px; margin-block: 12px; }
+.recorder-playback audio { width: 100%; max-width: 380px; }
+.evidence-card { min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 10px; overflow-wrap: anywhere; }
+.evidence-card h4 { margin: 0 0 8px; text-transform: capitalize; }
+.evidence-card p { font-size: 12px; line-height: 1.7; }
+.evidence-card strong { font-size: 12px; }
+.skill-bars { align-items: stretch; }
+#ykiContent { overflow-wrap: anywhere; }
+button:disabled { opacity: .55; cursor: default; }
+@media (max-width: 720px) {
+  .bridge-units { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #ykiContent:has(#bridgeActivity) .lesson-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lesson-steps { flex-wrap: wrap; }
+  #bridgeActivity .task-footer { flex-wrap: wrap; }
 }

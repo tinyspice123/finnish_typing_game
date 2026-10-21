@@ -2,6 +2,13 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, scheduleReview, isReviewDue, readinessScore, readinessLevel, dateKey } = require("../game-core.js");
 
+test("easy difficulty excludes harder sentences while preserving topic and review filters", () => {
+  const bank = [{ id: "easy", level: "starter", topic: "Tausta" }, { id: "hard", topic: "Tausta" }, { id: "other", level: "starter", topic: "Terveys" }];
+  assert.deepEqual(buildWeightedPool(bank, {}, { level: "starter", topic: "Tausta", mode: "listening" }), ["easy"]);
+  assert.deepEqual(buildWeightedPool(bank, { hard: { needsPractice: true } }, { level: "starter", mode: "review" }), []);
+  assert.equal(new Set(buildWeightedPool(bank, {}, { level: "all" })).size, 3);
+});
+
 test("normalize ignores punctuation, capitalization, and extra whitespace", () => {
   assert.equal(normalize("  Hyvää, PÄIVÄÄ! "), "hyvää päivää");
   assert.equal(normalize("Missä on asema?"), normalize("missä on asema"));

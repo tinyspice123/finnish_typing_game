@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20261018-1" />
+    <link rel="stylesheet" href="styles.css?v=20261021-2" />
   </head>
   <body>
     <div class="page-shell">
@@ -34,13 +34,14 @@
         </section>
 
         <nav class="learning-path" aria-label="YKI practice areas">
+          <button class="path-card" type="button" data-yki-view="bridge"><span>Start</span><strong>B1 bridge course</strong><small>Short, guided lessons</small></button>
           <button class="path-card is-active" type="button" data-yki-view="learn"><span>01</span><strong>Learn</strong><small>Vocabulary first</small></button>
           <button class="path-card" type="button" data-yki-view="typing"><span>02</span><strong>Typing</strong><small>Accuracy warm-up</small></button>
           <button class="path-card" type="button" data-yki-view="writing"><span>03</span><strong>Writing</strong><small>Active recall</small></button>
           <button class="path-card" type="button" data-yki-view="phrases"><span>04</span><strong>Phrases</strong><small>Useful structures</small></button>
           <button class="path-card" type="button" data-yki-view="speaking"><span>05</span><strong>Speaking</strong><small>Record & reflect</small></button>
           <button class="path-card" type="button" data-yki-view="comprehension"><span>06</span><strong>Understand</strong><small>Read & listen</small></button>
-          <button class="path-card path-card-accent" type="button" data-yki-view="mock"><span>07</span><strong>Mock test</strong><small>Timed practice</small></button>
+          <button class="path-card path-card-accent" type="button" data-yki-view="mock"><span>07</span><strong>Checkpoint</strong><small>Unseen situations</small></button>
         </nav>
 
         <section class="yki-workspace" id="ykiWorkspace" aria-labelledby="ykiTitle">
@@ -54,6 +55,9 @@
 
         <section class="typing-practice" id="typingPractice" hidden aria-label="Typing practice">
         <div class="practice-controls" aria-label="Practice settings">
+          <label>Difficulty
+            <select id="levelSelect"><option value="starter">Easy start · short sentences</option><option value="all">Full sentence bank · harder</option></select>
+          </label>
           <label>Practice mode
             <select id="modeSelect">
               <option value="adaptive">Adaptive mix</option>
@@ -139,7 +143,7 @@
           <div class="session-summary">
             <div><strong id="completedCount">0</strong><span>completed</span></div>
             <div><strong id="bestWpm">0</strong><span>best WPM</span></div>
-            <div><strong id="masteredCount">0</strong><span>mastered</span></div>
+            <div><strong id="masteredCount">0</strong><span>typing familiar</span></div>
             <button id="resetButton" class="reset-button" type="button">Reset session</button>
           </div>
         </section>
@@ -147,8 +151,8 @@
         <section class="learning-grid" aria-label="Learning progress">
           <article class="learning-card readiness-card">
             <div class="card-heading"><div><p class="eyebrow">PRACTICE PROFILE</p><h3>Skills, not speed</h3></div><strong id="readinessTotal">Not assessed</strong></div>
-            <div class="skill-bars" id="skillBars" aria-label="Readiness by skill"></div>
-            <p class="readiness-note" id="readinessNote">Complete practice tasks to build your estimate.</p>
+            <div class="skill-bars" id="skillBars" aria-label="Practice evidence by skill"></div>
+            <p class="readiness-note" id="readinessNote">Practice evidence is separate for each skill.</p>
           </article>
           <article class="learning-card goal-card">
             <div class="card-heading"><div><p class="eyebrow">DAILY GOAL</p><h3>Keep the rhythm</h3></div><strong id="goalFraction">0 / 10</strong></div>
@@ -168,9 +172,11 @@
 
       <footer><span>Built for curious language learners.</span><span>Finnish · Suomi</span></footer>
     </div>
-    <script src="game-core.js?v=20261017-4"></script>
+    <script src="game-core.js?v=20261021-2"></script>
     <script src="sentence-bank.js?v=20261017-2"></script>
-    <script src="app.js?v=20261017-2"></script>
-    <script src="yki-practice.js?v=20261018-1"></script>
+    <script src="app.js?v=20261021-2"></script>
+    <script src="learning-store.js?v=20261021-2"></script>
+    <script src="bridge-course.js?v=20261021-2"></script>
+    <script src="yki-practice.js?v=20261021-2"></script>
   </body>
 </html>

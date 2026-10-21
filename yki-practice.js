@@ -2,8 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "nappara-yki-v1";
-  const skills = ["writing", "speaking", "reading", "listening"];
-  const { scheduleReview, isReviewDue, readinessLevel, normalize } = GameCore;
+  const { scheduleReview, isReviewDue, normalize } = GameCore;
   const writingTasks = [
     { id: "w-landlord", topic: "Asuminen", register: "Formal message", minutes: 8, prompt: "Keittiön hana vuotaa. Kirjoita viesti vuokranantajalle.", points: ["Kerro, mikä ongelma on.", "Kerro, milloin ongelma alkoi.", "Pyydä korjausta ja ehdota sopivaa aikaa."], keys: ["hana", "vuotaa", "alk", "korja", "sopi"], model: "Hei,\n\nKeittiöni hana on vuotanut eilisestä lähtien. Vettä valuu jatkuvasti, vaikka hana on kiinni. Voisitteko järjestää korjauksen mahdollisimman pian? Olen kotona huomenna kello 16 jälkeen.\n\nYstävällisin terveisin,\nAlex" },
     { id: "w-cancel", topic: "Vuorovaikutus", register: "Polite message", minutes: 6, prompt: "Et pääse sovittuun tapaamiseen. Kirjoita viesti henkilölle, jonka kanssa sovit tapaamisen.", points: ["Pahoittele ja kerro, ettet pääse.", "Kerro lyhyesti syy.", "Ehdota kahta uutta aikaa."], keys: ["anteeksi", "valitettavasti", "koska", "sopis", "aika"], model: "Hei! Valitettavasti en pääse huomiseen tapaamiseen, koska lapseni on sairastunut. Olen pahoillani muutoksesta. Sopisiko sinulle torstaina kello 15 tai perjantaina aamupäivällä?" },
@@ -108,11 +107,8 @@
   };
   let state = load();
   let timerId = null;
-  let mediaRecorder = null;
-  let mediaStream = null;
-  let chunks = [];
-  let currentView = "learn";
-  let mock = null;
+  const attemptHelp = new Set();
+  const attemptUnseen = new Map();
 
   function load() {
     const fallback = { schema: 2, reviews: {}, results: { writing: [], speaking: [], reading: [], listening: [] }, completed: {}, help: {}, courses: {} };
@@ -129,22 +125,17 @@
     const pool = due.length ? due : unseen.length ? unseen : items;
     return pool[Math.floor(Math.random() * pool.length)];
   }
-  function addResult(skill, score, id, rating) {
-    state.results[skill] = [...(state.results[skill] || []), Math.round(score)].slice(-20);
+  function addResult(skill, score, id, rating, evidence = {}) {
+    // Preserve old history, but never turn heuristic scores or reflection into proficiency.
+    LearningStore.record({ taskId: id, sourceId: id, skill, unseen: attemptUnseen.get(id), supported: attemptHelp.has(id), reviewSource: ["reading", "listening"].includes(skill) ? "objective" : "self", success: ["reading", "listening"].includes(skill) ? score === 100 : null, difficulty: rating < 2 ? "hard" : "okay", ...evidence });
     state.completed[id] = (state.completed[id] || 0) + 1;
-    state.reviews[id] = scheduleReview(state.reviews[id], rating);
+    state.reviews[id] = scheduleReview(state.reviews[id], attemptHelp.has(id) ? 1 : rating);
     save(); renderReadiness();
   }
   function recordReview(id, rating) {
     state.completed[id] = (state.completed[id] || 0) + 1;
     state.reviews[id] = scheduleReview(state.reviews[id], rating);
     save(); renderReadiness();
-  }
-  function scoreKeywords(text, keys) {
-    const value = normalize(text);
-    const hits = keys.filter((key) => value.includes(normalize(key))).length;
-    const lengthScore = Math.min(30, value.split(" ").filter(Boolean).length);
-    return Math.min(100, Math.round((hits / keys.length) * 70 + lengthScore));
   }
   function setHeader(kicker, title, timed) { ui.kicker.textContent = kicker; ui.title.textContent = title; ui.timer.textContent = timed || "Untimed"; ui.status.textContent = ""; }
   function clearTimer() { clearInterval(timerId); timerId = null; }
@@ -169,7 +160,7 @@
       panel.hidden = !show;
       button.setAttribute("aria-expanded", String(show));
       button.textContent = show ? "Hide help" : "Help me understand";
-      if (show) { state.help[task.id] = true; save(); }
+      if (show) { state.help[task.id] = true; attemptHelp.add(task.id); LearningStore.state.support[task.id] = true; LearningStore.save(); save(); }
     };
   }
 
@@ -205,24 +196,42 @@
     if (complete) complete.onclick = () => { state.courses[selectedTopic] = true; save(); ui.status.textContent = `${selectedTopic} course complete. Your practice is ready.`; switchView(lesson.next); };
   }
 
-  function showWriting(task = sample(writingTasks), inMock = false) {
-    setHeader(inMock ? "MOCK TEST · WRITING" : "ACTIVE RECALL", "Write from a real situation", `${task.minutes}:00`);
-    ui.content.innerHTML = `${inMock ? mockBar() : ""}${meta(task.topic, task.register)}<p class="task-prompt" lang="fi">${task.prompt}</p><ul class="task-details">${task.points.map((p) => `<li>${p}</li>`).join("")}</ul><textarea class="yki-textarea" id="ykiAnswer" lang="fi" placeholder="Kirjoita vastauksesi suomeksi…" aria-label="Your Finnish response"></textarea><div class="task-footer"><button class="primary-action" id="checkWriting">Check my response</button><button class="secondary-action" id="showModel">Show model</button><span class="word-count" id="wordCount">0 words</span></div><div id="taskFeedback"></div>`;
-    document.querySelector("#ykiAnswer").insertAdjacentHTML("beforebegin", helpMarkup(task, inMock));
+  function showWriting(task = sample(writingTasks)) {
+    attemptUnseen.set(task.id, LearningStore.expose(task.id, "writing"));
+    attemptHelp.delete(task.id);
+    setHeader("ACTIVE RECALL", "Write from a real situation", `Suggested: ${task.minutes} min · untimed`);
+    ui.content.innerHTML = `${meta(task.topic, task.register)}<p class="task-prompt" lang="fi">${task.prompt}</p><ul class="task-details">${task.points.map((p) => `<li>${p}</li>`).join("")}</ul><textarea class="yki-textarea" id="ykiAnswer" lang="fi" placeholder="Kirjoita vastauksesi suomeksi…" aria-label="Your Finnish response"></textarea><div class="task-footer"><button class="primary-action" id="checkWriting">Check my response</button><button class="secondary-action" id="showModel">Show model</button><span class="word-count" id="wordCount">0 words</span></div><div id="taskFeedback"></div>`;
+    document.querySelector("#ykiAnswer").insertAdjacentHTML("beforebegin", helpMarkup(task));
     attachHelp(task);
     const answer = document.querySelector("#ykiAnswer");
-    answer.addEventListener("input", () => { document.querySelector("#wordCount").textContent = `${normalize(answer.value).split(" ").filter(Boolean).length} words`; });
-    document.querySelector("#showModel").onclick = () => { state.help[task.id] = true; save(); showWritingFeedback(task, answer.value, true, inMock); };
-    document.querySelector("#checkWriting").onclick = () => showWritingFeedback(task, answer.value, false, inMock);
-    if (inMock) startTimer(task.minutes * 60, () => showWritingFeedback(task, answer.value, false, true));
+    answer.value = LearningStore.state.drafts[task.id] || "";
+    if (LearningStore.state.support[task.id]) attemptHelp.add(task.id);
+    answer.addEventListener("input", () => { document.querySelector("#wordCount").textContent = `${normalize(answer.value).split(" ").filter(Boolean).length} words`; LearningStore.state.drafts[task.id] = answer.value; LearningStore.save(); });
+    document.querySelector("#showModel").onclick = () => { state.help[task.id] = true; attemptHelp.add(task.id); LearningStore.state.support[task.id] = true; LearningStore.save(); save(); showWritingFeedback(task, answer.value, true); };
+    document.querySelector("#checkWriting").onclick = () => showWritingFeedback(task, answer.value, false);
   }
-  function showWritingFeedback(task, answer, usedHelp, inMock) {
-    const score = scoreKeywords(answer, task.keys);
-    document.querySelector("#taskFeedback").innerHTML = `<div class="feedback-panel"><h3>Communicative checklist</h3><p>Your response covers approximately <strong>${score}%</strong> of the expected language and detail. This is practice feedback, not an official YKI score.</p><div class="check-list">${task.points.map((p) => `<label><input type="checkbox"> <span>${p}</span></label>`).join("")}</div><h3>One possible answer</h3><div class="model-answer" lang="fi">${safe(task.model)}</div><div class="rating-row"><span>How independent was this?</span><button class="rating-button" data-rate="1">Needed help</button><button class="rating-button" data-rate="2">Mostly mine</button><button class="rating-button" data-rate="3">Confident</button></div></div>`;
+  function showWritingFeedback(task, answer, usedHelp) {
+    if (!normalize(answer) && !usedHelp) { ui.status.textContent = "Write a response first. Keywords alone are not an assessment of communication."; return; }
+    const alternatives = {
+      "w-landlord": "Hei! Keittiön hana on rikki. Se alkoi vuotaa eilen. Voisiko joku tulla korjaamaan sen huomenna iltapäivällä?",
+      "w-cancel": "Hei! Anteeksi, en voi tulla huomenna, sillä olen sairas. Voimmeko tavata torstaina kolmelta tai perjantaina aamulla?",
+      "w-complaint": "Hei! Tilauksessa 5482 piti olla M-kokoinen takki, mutta sain koon S. Voinko vaihtaa sen? Pyydän ohjeita palautukseen.",
+      "w-opinion": "Minusta keskustassa voisi olla vähemmän autoja, koska melu vähenisi ja kävely olisi turvallisempaa. Jotkut kuitenkin tarvitsevat autoa. Heille pitää järjestää toimiva ratkaisu."
+    };
+    document.querySelector("#taskFeedback").innerHTML = `<div class="feedback-panel"><h3>Review what you communicated</h3><p>Automatic observation: ${normalize(answer).split(" ").filter(Boolean).length} words written. Length and keywords do not tell us whether the message works.</p><p>Self-reflection: read each point and decide whether your recipient would understand it. Your wording can differ from the examples.</p><div class="check-list">${task.points.map((p) => `<label><input type="checkbox" class="writing-check"> <span>${p}</span></label>`).join("")}</div><label><input type="checkbox" id="writingOutsideHelp">I used other help</label><details><summary>Compare possible answers after submission</summary><div class="model-answer" lang="fi">${safe(task.model)}</div><h4>Another way to communicate it</h4><p lang="fi">${safe(alternatives[task.id] || task.model)}</p></details><button type="button" class="secondary-action" id="exportWriting">Download answer for tutor review</button><p>Tutor feedback is separate: download your sample, ask whether the meaning is clear and the requested points are covered, then record received feedback in the bridge course.</p><div class="rating-row"><span>How independent was this?</span><button class="rating-button" data-rate="1">Needed help</button><button class="rating-button" data-rate="2">Mostly mine</button><button class="rating-button" data-rate="3">Confident</button></div></div>`;
+    document.querySelector("#exportWriting").onclick = () => LearningStore.download(`${task.id}.txt`, `Task: ${task.prompt}\n\n${answer}\n\nTutor: Is the meaning clear? Are the requested points covered? What should I improve?`);
+    document.querySelector("#taskFeedback details").addEventListener("toggle", event => { if (event.target.open) { attemptHelp.add(task.id); LearningStore.state.support[task.id] = true; LearningStore.save(); } });
     document.querySelectorAll("[data-rate]").forEach((button) => button.onclick = () => {
-      const rating = usedHelp ? Math.min(1, Number(button.dataset.rate)) : Number(button.dataset.rate);
-      addResult("writing", Math.max(10, score - (usedHelp ? 15 : 0)), task.id, rating);
-      if (inMock) nextMock(); else { ui.status.textContent = "Saved. This task is now scheduled for review."; setTimeout(() => showWriting(), 700); }
+      if (!normalize(answer)) { ui.status.textContent = "Write your own response first, then check it to save a reflection."; return; }
+      if (usedHelp || Number(button.dataset.rate) < 3 || document.querySelector("#writingOutsideHelp").checked) attemptHelp.add(task.id);
+      const checked = [...document.querySelectorAll(".writing-check")].every(item => item.checked);
+      const rating = checked ? Number(button.dataset.rate) : 1;
+      addResult("writing", 0, task.id, rating);
+      document.querySelectorAll("[data-rate]").forEach(item => { item.disabled = true; });
+      LearningStore.state.drafts[`${task.id}:submitted:${Date.now()}`] = answer;
+      delete LearningStore.state.drafts[task.id]; delete LearningStore.state.support[task.id]; LearningStore.save();
+      ui.status.textContent = "Self-reflection saved. This task is scheduled for review.";
+      const next = document.createElement("button"); next.type = "button"; next.className = "primary-action"; next.textContent = "Next writing task"; next.onclick = () => showWriting(); document.querySelector("#taskFeedback").append(next);
     });
   }
 
@@ -241,98 +250,45 @@
     });
   }
 
-  function showSpeaking(task = sample(speakingTasks), inMock = false) {
-    setHeader(inMock ? "MOCK TEST · SPEAKING" : "SPEAKING", "Say it in your own words", `Prep ${task.prep}s`);
-    ui.content.innerHTML = `${inMock ? mockBar() : ""}${meta(task.topic, `${task.seconds} second response`)}<p class="task-prompt" lang="fi">${task.prompt}</p><div class="recorder-actions"><button class="primary-action record-button" id="recordButton">Start recording</button><button class="secondary-action" id="skipRecording">Use self-assessment only</button></div><div id="recordingResult"></div>`;
-    document.querySelector(".recorder-actions").insertAdjacentHTML("beforebegin", helpMarkup(task, inMock));
+  function showSpeaking(task = sample(speakingTasks)) {
+    attemptUnseen.set(task.id, LearningStore.expose(task.id, "speaking"));
+    attemptHelp.delete(task.id); LearningStore.stopRecording();
+    setHeader("SPEAKING", "Say it in your own words");
+    ui.content.innerHTML = `${meta(task.topic, `${task.seconds} second suggested response`)}<p class="task-prompt" lang="fi">${task.prompt}</p><div class="recorder-actions"><button class="primary-action" id="startSpeakingPrep">Start optional preparation timer</button><button class="secondary-action" id="skipRecording">Reflect on my response</button></div><div id="localSpeakingRecorder"></div><div id="recordingResult"></div>`;
+    document.querySelector(".recorder-actions").insertAdjacentHTML("beforebegin", helpMarkup(task));
     attachHelp(task);
-    startTimer(task.prep, () => { ui.timer.textContent = "Ready to speak"; });
-    document.querySelector("#recordButton").onclick = () => toggleRecording(task, inMock);
-    document.querySelector("#skipRecording").onclick = () => speakingChecklist(task, inMock);
+    LearningStore.attachRecorder(document.querySelector("#localSpeakingRecorder"), task.id);
+    document.querySelector("#startSpeakingPrep").onclick = () => startTimer(task.prep, () => { ui.timer.textContent = "Ready to speak"; });
+    document.querySelector("#skipRecording").onclick = () => speakingChecklist(task);
   }
-  async function toggleRecording(task, inMock) {
-    const button = document.querySelector("#recordButton");
-    if (mediaRecorder?.state === "recording") { mediaRecorder.stop(); return; }
-    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { ui.status.textContent = "Recording is unavailable in this browser. You can still use self-assessment."; speakingChecklist(task, inMock); return; }
-    try {
-      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true }); chunks = [];
-      mediaRecorder = new MediaRecorder(mediaStream);
-      mediaRecorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
-      mediaRecorder.onstop = () => { clearTimer(); const url = URL.createObjectURL(new Blob(chunks, { type: mediaRecorder.mimeType })); mediaStream.getTracks().forEach((track) => track.stop()); document.querySelector("#recordingResult").innerHTML = `<audio class="recording-player" controls src="${url}"></audio>`; button.textContent = "Record again"; button.classList.remove("recording"); speakingChecklist(task, inMock, false); };
-      mediaRecorder.start(); button.textContent = "Stop recording"; button.classList.add("recording"); startTimer(task.seconds, () => { if (mediaRecorder.state === "recording") mediaRecorder.stop(); });
-    } catch { ui.status.textContent = "Microphone permission was not granted. Your recording never leaves this device."; }
-  }
-  function speakingChecklist(task, inMock, replace = true) {
+  function speakingChecklist(task, replace = true) {
     const host = document.querySelector("#recordingResult");
-    const checklist = `<div class="feedback-panel"><h3>Listen, then assess your response</h3><div class="check-list">${task.checks.map((p) => `<label><input type="checkbox" class="speak-check"> <span>${p}</span></label>`).join("")}</div><button class="primary-action" id="saveSpeaking">Save reflection</button></div>`;
+    const checklist = `<div class="feedback-panel"><h3>Reflect on your response</h3><p>This is your reflection, not a speaking score. Speak aloud first, then add brief notes.</p><label for="speakingNotes">What I said</label><textarea id="speakingNotes" class="yki-textarea" lang="fi"></textarea><div class="check-list">${task.checks.map((p) => `<label><input type="checkbox" class="speak-check"> <span>${p}</span></label>`).join("")}</div><label><input type="checkbox" id="speakingUsedHelp">I used help or read from notes</label><button class="primary-action" id="saveSpeaking">Save reflection</button><button class="secondary-action" id="exportSpeaking">Download notes for tutor</button></div>`;
     if (replace) host.innerHTML = checklist; else host.insertAdjacentHTML("beforeend", checklist);
+    document.querySelector("#exportSpeaking").onclick = () => LearningStore.download(`${task.id}.txt`, `${task.prompt}\n\n${document.querySelector("#speakingNotes").value}`);
     document.querySelector("#saveSpeaking").onclick = () => {
+      if (!normalize(document.querySelector("#speakingNotes").value)) { ui.status.textContent = "Add a few notes about what you said first."; return; }
+      if (document.querySelector("#speakingUsedHelp").checked) attemptHelp.add(task.id);
       const count = document.querySelectorAll(".speak-check:checked").length; const score = Math.round(count / task.checks.length * 100);
-      addResult("speaking", score, task.id, score >= 75 ? 3 : score >= 50 ? 2 : 1);
-      if (inMock) nextMock(); else { ui.status.textContent = "Reflection saved. Try the prompt again later and improve one thing."; setTimeout(() => showSpeaking(), 700); }
+      LearningStore.state.drafts[task.id] = document.querySelector("#speakingNotes").value;
+      addResult("speaking", 0, task.id, score >= 75 ? 3 : score >= 50 ? 2 : 1);
+      document.querySelector("#saveSpeaking").disabled = true;
+      ui.status.textContent = "Reflection saved. Try the prompt again later and improve one thing.";
+      const next = document.createElement("button"); next.type = "button"; next.className = "primary-action"; next.textContent = "Next speaking task"; next.onclick = () => showSpeaking(); host.append(next);
     };
   }
 
-  function showComprehension(task = sample(comprehensionTasks), inMock = false) {
-    const listening = task.skill === "listening";
-    setHeader(inMock ? `MOCK TEST · ${task.skill.toUpperCase()}` : "UNDERSTAND FINNISH", listening ? "Listen for meaning" : "Read for meaning");
-    ui.content.innerHTML = `${inMock ? mockBar() : ""}${meta(task.topic, listening ? "Listening" : "Reading")}${listening ? `<div class="audio-prompt"><button class="primary-action" id="playSource">▶ Play Finnish audio</button><span>Listen before opening the choices.</span></div>` : `<div class="source-card" lang="fi">${task.source}</div>`}<p class="task-prompt" style="margin-top:22px" lang="fi">${task.question}</p><div class="answer-grid">${task.options.map((option, index) => `<button class="answer-option" data-answer="${index}">${option}</button>`).join("")}</div><div id="taskFeedback"></div>`;
-    document.querySelector(".answer-grid").insertAdjacentHTML("beforebegin", helpMarkup(task, inMock));
-    attachHelp(task);
-    if (listening) document.querySelector("#playSource").onclick = () => speak(task.source);
-    document.querySelectorAll("[data-answer]").forEach((button) => button.onclick = () => {
-      const chosen = Number(button.dataset.answer); const correct = chosen === task.answer;
-      document.querySelectorAll("[data-answer]").forEach((item) => { item.disabled = true; if (Number(item.dataset.answer) === task.answer) item.classList.add("correct"); });
-      if (!correct) button.classList.add("wrong");
-      addResult(task.skill, correct ? 100 : 20, task.id, correct ? 3 : 1);
-      document.querySelector("#taskFeedback").innerHTML = `<div class="feedback-panel"><h3>${correct ? "Oikein!" : "Not quite yet"}</h3><p>${task.explanation}</p><button class="primary-action" id="nextComprehension">${inMock ? "Continue mock test" : "Next task"}</button></div>`;
-      document.querySelector("#nextComprehension").onclick = () => inMock ? nextMock() : showComprehension();
-    });
-  }
-  function speak(text) {
-    if (!("speechSynthesis" in window)) { ui.status.textContent = "Speech synthesis is unavailable in this browser."; return; }
-    speechSynthesis.cancel(); const utterance = new SpeechSynthesisUtterance(text); utterance.lang = "fi-FI"; utterance.rate = .86; utterance.voice = speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith("fi")) || null; speechSynthesis.speak(utterance);
-  }
-
-  function showMockStart() {
-    clearTimer(); setHeader("YKI PRACTICE TEST", "A short four-skill checkpoint", "≈ 20 min");
-    ui.content.innerHTML = `<div class="feedback-panel"><h3>This is practice, not an official YKI assessment</h3><p>You will complete one reading task, one listening task, one writing task, and one speaking task. Instructions are in Finnish. Your results update the readiness dashboard.</p><ul class="task-details"><li>Find a quiet place and allow microphone access for speaking.</li><li>Complete tasks without translations or outside help.</li><li>The browser-based estimate measures practice performance only.</li></ul><button class="primary-action" id="startMock">Start checkpoint</button></div>`;
-    document.querySelector("#startMock").onclick = () => { mock = { step: 0, tasks: [comprehensionTasks.find((t) => t.skill === "reading"), comprehensionTasks.find((t) => t.skill === "listening"), writingTasks[3], speakingTasks[2]] }; nextMock(false); };
-  }
-  function mockBar() { return `<div class="mock-progress" aria-label="Mock test progress"><span style="width:${mock ? mock.step / mock.tasks.length * 100 : 0}%"></span></div>`; }
-  function nextMock(increment = true) {
-    clearTimer(); if (increment) mock.step++;
-    if (mock.step >= mock.tasks.length) { showMockResult(); return; }
-    const task = mock.tasks[mock.step];
-    if (task.id.startsWith("r-") || task.id.startsWith("l-")) showComprehension(task, true);
-    else if (task.id.startsWith("w-")) showWriting(task, true);
-    else showSpeaking(task, true);
-  }
-  function showMockResult() {
-    setHeader("CHECKPOINT COMPLETE", "Your current practice picture", "Done"); renderReadiness();
-    const levels = skills.map((skill) => [skill, readinessLevel(state.results[skill])]);
-    ui.content.innerHTML = `<div class="feedback-panel"><h3>Practice profile</h3><div class="skill-bars">${levels.map(([skill, level]) => skillBar(skill, level)).join("")}</div><p>Complete at least three tasks in each skill to build a balanced profile. These labels describe recent practice only, not an official level or pass prediction.</p><button class="primary-action" id="finishMock">Return to practice</button></div>`;
-    document.querySelector("#finishMock").onclick = () => switchView("typing"); mock = null;
-  }
-
-  function skillBar(skill, level) { return `<div class="skill-bar"><span>${skill}</span><strong>${level.label}</strong><i><span style="width:${level.assessed ? level.score : 0}%"></span></i></div>`; }
   function renderReadiness() {
-    const levels = Object.fromEntries(skills.map((skill) => [skill, readinessLevel(state.results[skill] || [])]));
-    const allAssessed = skills.every((skill) => levels[skill].assessed);
-    const overallScore = allAssessed ? Math.round(skills.reduce((sum, skill) => sum + levels[skill].score, 0) / skills.length) : 0;
-    const overall = allAssessed ? readinessLevel([overallScore, overallScore, overallScore]) : { label: "Not assessed" };
-    ui.total.textContent = overall.label; ui.bars.innerHTML = skills.map((skill) => skillBar(skill, levels[skill])).join("");
-    const due = Object.values(state.reviews).filter((record) => isReviewDue(record)).length;
-    ui.note.textContent = allAssessed ? `${due} review item${due === 1 ? " is" : "s are"} due. Labels reflect your five most recent results in each skill.` : `Complete three tasks in each skill to build your practice profile. ${due} review item${due === 1 ? " is" : "s are"} due.`;
+    LearningStore.renderProfile();
   }
   function switchView(view) {
-    clearTimer(); window.speechSynthesis?.cancel?.(); currentView = view;
+    clearTimer(); BridgeCourse.stop(); window.speechSynthesis?.cancel?.();
     document.querySelectorAll("[data-yki-view]").forEach((button) => button.classList.toggle("is-active", button.dataset.ykiView === view));
     ui.typing.hidden = view !== "typing"; ui.workspace.hidden = view === "typing";
-    if (view === "learn") showLearn(); else if (view === "writing") showWriting(); else if (view === "phrases") showPhrases(); else if (view === "speaking") showSpeaking(); else if (view === "comprehension") showComprehension(); else if (view === "mock") showMockStart();
+    if (view === "bridge") BridgeCourse.show(); else if (view === "learn") showLearn(); else if (view === "writing") showWriting(); else if (view === "phrases") showPhrases(); else if (view === "speaking") showSpeaking(); else if (view === "comprehension") BridgeCourse.showSources(); else if (view === "mock") BridgeCourse.showCheckpointStart();
   }
 
   document.querySelectorAll("[data-yki-view]").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.ykiView)));
   renderReadiness();
-  showLearn();
+  switchView("bridge");
 })();

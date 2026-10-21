@@ -48,6 +48,7 @@
     const topic = options.topic || "all";
     const records = sentences.map((sentence, index) => ({ id: sentenceId(sentence, index), sentence }));
     let candidates = records;
+    if (options.level && options.level !== "all") candidates = candidates.filter(({ sentence }) => sentence.level === options.level);
     if (topic !== "all") candidates = candidates.filter(({ sentence }) => sentence.topic === topic);
     if (mode === "patterns") candidates = candidates.filter(({ sentence }) => sentence.topic === "Vuorovaikutus");
     if (mode === "review") candidates = candidates.filter(({ id }) => progress[id]?.needsPractice);
@@ -114,5 +115,56 @@
     return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
   }
 
-  return { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, scheduleReview, isReviewDue, readinessScore, readinessLevel, dateKey };
+  const learningSkills = ["reading", "listening", "writing", "speaking"];
+  function createLearningAttempt(history, input, now = new Date()) {
+    const supported = Boolean(input.supported);
+    const reviewSource = ["objective", "tutor"].includes(input.reviewSource) ? input.reviewSource : "self";
+    const success = reviewSource !== "self" && typeof input.success === "boolean" ? input.success : null;
+    const sourceId = input.sourceId || input.taskId;
+    const prior = history.filter(item => item.skill === input.skill && item.sourceId === sourceId);
+    const earlier = history.filter(item => item.skill === input.skill && item.unitId === input.unitId && item.unitId);
+    const delayed = success === true && !supported && earlier.some(item => item.success === true && !item.supported && item.taskId !== input.taskId && item.sourceId !== sourceId && now.getTime() - Date.parse(item.at) >= 86400000);
+    return { id: input.id || `${now.getTime()}-${history.length}`, taskId: input.taskId, sourceId: input.sourceId || input.taskId,
+      unitId: input.unitId || null, variant: input.variant || 0, skill: input.skill, at: now.toISOString(),
+      supported, unseen: input.unseen !== false && !prior.length, type: input.type || "practice", reviewSource, success, delayed,
+      difficulty: input.difficulty === "hard" ? "hard" : "okay" };
+  }
+
+  function summarizeEvidence(attempts = []) {
+    return Object.fromEntries(learningSkills.map(skill => {
+      const items = attempts.filter(item => item.skill === skill);
+      return [skill, { attempts: items.length, sources: new Set(items.map(item => item.sourceId)).size,
+        unseen: items.filter(item => item.unseen).length, supported: items.filter(item => item.supported).length,
+        independent: items.filter(item => !item.supported).length, delayed: items.filter(item => item.delayed && item.success === true && !item.supported).length,
+        reviewed: items.filter(item => item.reviewSource === "tutor").length }];
+    }));
+  }
+
+  function learningReview(attempts, unitId, now = new Date()) {
+    const items = attempts.filter(item => item.unitId === unitId);
+    if (!items.length) return null;
+    const last = items[items.length - 1];
+    const needsHelp = last.supported || last.success === false || last.difficulty === "hard";
+    const days = needsHelp || last.success === null ? 1 : last.delayed ? 7 : 3;
+    const dueAt = new Date(Date.parse(last.at) + days * 86400000).toISOString();
+    return { dueAt, due: Date.parse(dueAt) <= now.getTime(), reason: needsHelp ? "Revisit after difficulty or support" : last.success === null ? "Check your independent response on another day" : "Retrieve with changed details after a delay" };
+  }
+
+  function suggestLearning(units, attempts, completed = {}, now = new Date()) {
+    const due = units.map(unit => ({ unit, review: learningReview(attempts, unit.id, now) })).filter(item => item.review?.due).sort((a, b) => Date.parse(a.review.dueAt) - Date.parse(b.review.dueAt));
+    if (due.length) return { unitId: due[0].unit.id, step: 6, reason: due[0].review.reason };
+    const next = units.find(unit => !completed[unit.id]);
+    return next ? { unitId: next.id, step: 0, reason: "Next practical unit in the course sequence" } : { unitId: units[0]?.id, step: 6, reason: "Course visited: practise a changed scenario to check transfer" };
+  }
+
+  function migrateBridgeProgress(saved, ids) {
+    const migrated = { completed: {}, drafts: {} };
+    ids.forEach((id, index) => {
+      if (saved?.[`done-${index}`]) migrated.completed[id] = true;
+      if (typeof saved?.[`draft-${index}`] === "string") migrated.drafts[`${id}:4:0`] = saved[`draft-${index}`];
+    });
+    return migrated;
+  }
+
+  return { normalize, calculateStats, identifyMistypedWords, sentenceId, buildWeightedPool, recordSuccess, scheduleReview, isReviewDue, readinessScore, readinessLevel, dateKey, createLearningAttempt, summarizeEvidence, learningReview, suggestLearning, migrateBridgeProgress };
 });
